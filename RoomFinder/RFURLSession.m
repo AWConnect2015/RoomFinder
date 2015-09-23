@@ -6,6 +6,7 @@
 #import <UIKit/UIKit.h>
 #import "RFURLSession.h"
 #import "Credential.h"
+#import <AWSDK/AWController.h>
 
 @interface RFURLSession()<NSURLSessionDataDelegate> {
     void (^_completionBlock)(NSData *data, NSURLResponse *response, NSError *error);
@@ -64,6 +65,22 @@
  */
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential *))completionHandler
 {
+    NSError *error;
+    if ( [[AWController clientInstance] canHandleProtectionSpace:challenge.protectionSpace withError:&error]) {
+        
+        if ([[AWController clientInstance] handleChallengeForURLSessionChallenge:challenge completionHandler:^(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential) {
+            completionHandler(disposition, credential);
+        }]) {
+            NSLog(@"Challenge handled successfully");
+        } else {
+            NSLog(@"handleChallengeForURLSessionChallenge failed.");
+            NSMutableDictionary *details = [NSMutableDictionary dictionary];
+            [details setValue:@"Challenge handled Failed"  forKey:NSLocalizedDescriptionKey];
+            NSError *error = [NSError errorWithDomain:@"Warning" code:RFInvalidCredential userInfo:details];
+            _completionBlock(nil,nil,error);
+        }
+        
+    } else {
             if ([challenge previousFailureCount] < 1) {
                 NSURLCredential *newCredential;
                 newCredential = [NSURLCredential credentialWithUser:[[Credential clientInstance] username]
@@ -82,6 +99,7 @@
                 }
                 completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
             }
+    }
 }
 
 /**
