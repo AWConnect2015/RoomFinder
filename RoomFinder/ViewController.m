@@ -231,7 +231,7 @@ enum parseXML {
     [AWRestrictions startService:&error];
     
     if (error) {
-        NSLog(@"AWRestrictions start service error: %@", error);
+        AWLogError(@"AWRestrictions start service error: %@", error);
     }
 }
 
@@ -241,7 +241,7 @@ enum parseXML {
     AWDeviceStatusController *statusController = [[AWDeviceStatusController alloc] initWithConfiguration:configuration];
     
     [statusController queryDeviceEnrollmentStatus:^(BOOL enrolled, NSError *error) {
-        NSLog(@"This device %@ enrolled.", (enrolled == YES) ? @"is" : @"is not");
+        AWLogInfo(@"This device %@ enrolled.", (enrolled == YES) ? @"is" : @"is not");
     }];
 }
 
@@ -257,31 +257,43 @@ enum parseXML {
     return [super canPerformAction:action withSender:sender];
 }
 
+#pragma mark - AWSDK Logging
+- (void) sendApplicationLogs {
+    [[AWLog sharedInstance] sendApplicationLogsWithCompletion:^(BOOL success, NSError *error) {
+        if (!success) {
+            AWLogError(@"send device log failed: %@", error.localizedDescription);
+        }
+    }];
+}
+
 #pragma mark - AWSDK delegates
 
 - (void)initialCheckDoneWithError:(NSError*) error {
-    NSLog(@"Initial check done!");
+    AWLogInfo(@"Initial check done!");
     [self RetrieveCustomSetting];
     [self initRestriction];
     [self checkDeviceEnrollment];
+    [self sendApplicationLogs];
     [_loadingView hide];
     _loadingView = nil;
 }
 
 - (void)receivedProfiles:(NSArray*)profiles {
-    NSLog(@"Recieved profiles!");
+    AWLogInfo(@"Recieved profiles!");
+    AWProfile *myProfiles = profiles[0];
+    restrictionPayload = myProfiles.restrictionsPayload;
 }
 
 - (void)wipe {
-    NSLog(@"Wipe!");
+    AWLogInfo(@"Wipe!");
 }
 
 - (void)lock {
-    NSLog(@"lock");
+    AWLogInfo(@"lock");
 }
 
 - (void)unlock {
-    NSLog(@"unlock");
+    AWLogInfo(@"unlock");
 }
 
 - (void)stopNetworkActivity {}
