@@ -11,6 +11,11 @@
 #import "RFURLSession.h"
 #import "HUDView.h"
 #import <AWSDK/AWCommandManager.h>
+#import <AWSDK/AWRestrictionsPayload.h>
+#import <AWSDK/AWRestrictions.h>
+#import <AWSDK/AWDeviceStatusConfiguration.h>
+#import <AWSDK/AWDeviceStatusController.h>
+#import <AWSDK/AWProfile.h>
 
 
 @interface ViewController () <UIAlertViewDelegate, NSXMLParserDelegate, NSURLSessionDataDelegate, NSURLSessionTaskDelegate>
@@ -26,6 +31,7 @@ static NSMutableString *soapResults;
 static NSInteger elementFound;
 static NSMutableArray *recievedLocations;
 static NSMutableArray *recievedEmails;
+static AWRestrictionsPayload *restrictionPayload;
 
 /**
  @enum parseXML
@@ -219,11 +225,45 @@ enum parseXML {
     }
 }
 
+#pragma mark - AWSDK Restrictions
+- (void)initRestriction {
+    NSError *error = nil;
+    [AWRestrictions startService:&error];
+    
+    if (error) {
+        NSLog(@"AWRestrictions start service error: %@", error);
+    }
+}
+
+- (void)checkDeviceEnrollment {
+    AWDeviceStatusConfiguration *configuration = [[AWDeviceStatusConfiguration alloc] initWithHostName:nil endpointPath:nil deviceStatusAction:nil];
+    
+    AWDeviceStatusController *statusController = [[AWDeviceStatusController alloc] initWithConfiguration:configuration];
+    
+    [statusController queryDeviceEnrollmentStatus:^(BOOL enrolled, NSError *error) {
+        NSLog(@"This device %@ enrolled.", (enrolled == YES) ? @"is" : @"is not");
+    }];
+}
+
+- (BOOL)canPerformAction:(SEL)action withSender:(id)sender{
+    
+    if (action == @selector(copy:) || action == @selector(paste:) || action == @selector(cut:) || action == @selector(select:) || action == @selector(selectAll:)) {
+        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+            [[UIMenuController sharedMenuController] setMenuVisible:!restrictionPayload.preventCopyAndCut animated:NO];
+        }];
+        return !restrictionPayload.preventCopyAndCut;
+    }
+    
+    return [super canPerformAction:action withSender:sender];
+}
+
 #pragma mark - AWSDK delegates
 
 - (void)initialCheckDoneWithError:(NSError*) error {
     NSLog(@"Initial check done!");
     [self RetrieveCustomSetting];
+    [self initRestriction];
+    [self checkDeviceEnrollment];
     [_loadingView hide];
     _loadingView = nil;
 }
