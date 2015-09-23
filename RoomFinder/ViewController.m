@@ -10,6 +10,7 @@
 #import "Soap.h"
 #import "RFURLSession.h"
 #import "HUDView.h"
+#import <AWSDK/AWCommandManager.h>
 
 
 @interface ViewController () <UIAlertViewDelegate, NSXMLParserDelegate, NSURLSessionDataDelegate, NSURLSessionTaskDelegate>
@@ -200,10 +201,29 @@ enum parseXML {
     }
 }
 
+#pragma mark - AWSDK Custom Setting
+- (void)RetrieveCustomSetting {
+    AWCommandManager *commandManager = [AWCommandManager sharedManager];
+    AWProfile *profile = [commandManager sdkProfile];
+    
+    if (profile == nil) {
+        AWLogWarning(@"There's no SDK Profile currently installed.");
+    } else {
+        AWCustomPayload *customPayload = [profile customPayload];
+        if (customPayload != nil) {
+            NSString *customSettings = [customPayload settings];
+            
+            AWLogInfo(@"%@", customSettings);
+            [_serverTextField setText:customSettings];
+        }
+    }
+}
+
 #pragma mark - AWSDK delegates
 
 - (void)initialCheckDoneWithError:(NSError*) error {
     NSLog(@"Initial check done!");
+    [self RetrieveCustomSetting];
     [_loadingView hide];
     _loadingView = nil;
 }
