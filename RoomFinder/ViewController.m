@@ -16,6 +16,7 @@
 #import <AWSDK/AWDeviceStatusConfiguration.h>
 #import <AWSDK/AWDeviceStatusController.h>
 #import <AWSDK/AWProfile.h>
+#import <AWSDK/AWCompromiseDetection.h>
 
 
 @interface ViewController () <UIAlertViewDelegate, NSXMLParserDelegate, NSURLSessionDataDelegate, NSURLSessionTaskDelegate>
@@ -266,6 +267,15 @@ enum parseXML {
     }];
 }
 
+#pragma mark - AWSDK Jailbreak
+- (void) checkJailBroken {
+    if ([AWCompromiseDetection jailBrokenStatus] == AWDeviceJailBroken) {
+        AWLogWarning(@"Device is jailBroken. Take necessary actions.");
+    } else {
+        AWLogInfo(@"Device is not jailBroken.");
+    }
+}
+
 #pragma mark - AWSDK delegates
 
 - (void)initialCheckDoneWithError:(NSError*) error {
@@ -274,6 +284,7 @@ enum parseXML {
     [self initRestriction];
     [self checkDeviceEnrollment];
     [self sendApplicationLogs];
+    [self checkJailBroken];
     [_loadingView hide];
     _loadingView = nil;
 }
