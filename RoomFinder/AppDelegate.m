@@ -4,6 +4,7 @@
 //
 
 #import "AppDelegate.h"
+#import "ViewController.h"
 
 @interface AppDelegate ()
 
@@ -14,6 +15,15 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    UINavigationController *navController = (UINavigationController *)self.window.rootViewController;
+    ViewController *rootViewController = [[navController viewControllers] firstObject];
+    //config Controller
+    AWController *controller = [AWController clientInstance];
+    //defining the callback scheme so the app can called back
+    controller.callbackScheme = @"roomFinder";
+    //set the delegate to know when the initialization has been completed
+    controller.delegate = rootViewController;
+    
     return YES;
 }
 
@@ -33,6 +43,11 @@
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
     // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+    [[AWController clientInstance] start];
+}
+
+- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
+    return [[AWController clientInstance] handleOpenURL:url fromApplication:sourceApplication];
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application {

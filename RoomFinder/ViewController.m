@@ -9,6 +9,7 @@
 #import "Credential.h"
 #import "Soap.h"
 #import "RFURLSession.h"
+#import "HUDView.h"
 
 
 @interface ViewController () <UIAlertViewDelegate, NSXMLParserDelegate, NSURLSessionDataDelegate, NSURLSessionTaskDelegate>
@@ -16,6 +17,7 @@
 @property (weak, nonatomic) IBOutlet UIButton *nextButton;
 @property (strong, nonatomic) NSString *server;
 @property (strong, nonatomic) NSMutableData *recievedData;
+@property (strong, nonatomic) HUDView *loadingView;
 @end
 
 static NSXMLParser *XMLParser;
@@ -45,6 +47,10 @@ enum parseXML {
     
     _nextButton.layer.cornerRadius = 5;
 
+    _loadingView = [[HUDView alloc] initWithFrame:CGRectMake(self.view.frame.origin.x, self.view.frame.origin.y, self.view.frame.size.width/1.8, self.view.frame.size.height/3.5)];
+    [[_loadingView messageLabel] setText:@"Loading"];
+    [_loadingView showFromViewController:self animated:YES centeredInView:YES];
+    
     [[ConfigProfile clientInstance] setServerConfig];
     if ([[[ConfigProfile clientInstance] serverURL] isEqualToString:@""]) {
         self.serverTextField.text = @"";
@@ -194,5 +200,32 @@ enum parseXML {
     }
 }
 
+#pragma mark - AWSDK delegates
+
+- (void)initialCheckDoneWithError:(NSError*) error {
+    NSLog(@"Initial check done!");
+    [_loadingView hide];
+    _loadingView = nil;
+}
+
+- (void)receivedProfiles:(NSArray*)profiles {
+    NSLog(@"Recieved profiles!");
+}
+
+- (void)wipe {
+    NSLog(@"Wipe!");
+}
+
+- (void)lock {
+    NSLog(@"lock");
+}
+
+- (void)unlock {
+    NSLog(@"unlock");
+}
+
+- (void)stopNetworkActivity {}
+
+- (void)resumeNetworkActivity {}
 
 @end
